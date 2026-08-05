@@ -1,0 +1,9 @@
+[submodule "backend"]
+	path = backend
+	url = https://github.com/palurupravalika/Healthlog-Backend.git
+[submodule "healthLog App"]
+	path = healthLog App
+	url = https://github.com/palurupravalika/Healthlog-App.git
+[submodule "healthLog Web"]
+	path = healthLog Web
+	url = https://github.com/palurupravalika/Healthlog-Web.git

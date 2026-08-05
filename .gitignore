@@ -1,0 +1,16 @@
+# Main Healthlog repository .gitignore
+# This repo contains only submodules, README, and .gitmodules.
+# All source code lives in the individual sub-repositories.
+
+# IDE
+.idea/
+.vscode/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+
+# Accidentally dropped files
+*.log
