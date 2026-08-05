@@ -43,6 +43,10 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Install Performance Test Module Dependencies
+        run: |
+          npm --prefix backend/performance_tests install
+
       - name: Start Flask Backend Server
         env:
           PORT: 5000
@@ -84,7 +88,7 @@ jobs:
         run: |
           k6 run --summary-export backend/performance_tests/reports/summary.json backend/performance_tests/scripts/load-test.js || true
 
-      - name: Parse k6 Summary & Publish GitHub Step Summary
+      - name: Parse k6 Summary & Generate Enterprise Excel & Markdown Reports
         run: |
           node backend/performance_tests/scripts/parseK6Summary.js
 
@@ -97,5 +101,6 @@ jobs:
             backend/performance_tests/reports/summary.json
             backend/performance_tests/reports/summary-report.md
             backend/performance_tests/reports/summary.html
+            backend/performance_tests/reports/HealthLog_Backend_LoadTest_Report.xlsx
             backend/performance_tests/config/endpoints.json
           retention-days: 30
