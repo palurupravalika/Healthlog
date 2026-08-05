@@ -1,0 +1,101 @@
+name: HealthLog Backend API Load & Performance Test
+
+on:
+  push:
+    paths:
+      - 'backend/**'
+      - '.github/workflows/load-test.yml'
+    branches: [ main, master, develop ]
+  pull_request:
+    paths:
+      - 'backend/**'
+      - '.github/workflows/load-test.yml'
+    branches: [ main, master, develop ]
+  workflow_dispatch:
+    inputs:
+      test_profile:
+        description: 'Load Profile (Smoke, Load, Stress, Spike, Soak)'
+        required: false
+        default: 'Load'
+
+jobs:
+  performance-test:
+    name: Execute Standalone API Load Test Suite
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: Install Backend Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f backend/requirements.txt ]; then pip install -r backend/requirements.txt; fi
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Start Flask Backend Server
+        env:
+          PORT: 5000
+          FLASK_ENV: testing
+          JWT_SECRET_KEY: loadtest_jwt_secret_key_12345
+        run: |
+          cd backend
+          python run.py &
+          echo "Flask server launched in background."
+
+      - name: Wait for Backend Health Check (HTTP 200)
+        run: |
+          echo "Waiting for HealthLog Backend server to start on http://127.0.0.1:5000/health..."
+          TIMEOUT=30
+          ELAPSED=0
+          while [ $ELAPSED -lt $TIMEOUT ]; do
+            STATUS=$(curl -s -o /dev/null -w "%{http_code}" http://127.0.0.1:5000/health || true)
+            if [ "$STATUS" = "200" ]; then
+              echo "✅ HealthLog Backend is ONLINE (HTTP 200) after ${ELAPSED}s!"
+              exit 0
+            fi
+            sleep 1
+            ELAPSED=$((ELAPSED + 1))
+          done
+          echo "❌ Timed out waiting for Flask backend server after ${TIMEOUT}s!"
+          exit 1
+
+      - name: Setup k6 CLI
+        uses: grafana/setup-k6-action@v1
+
+      - name: Run Endpoint Discovery
+        run: |
+          node backend/performance_tests/scripts/endpoint-discovery.js
+
+      - name: Run k6 Load Test Suite
+        env:
+          BACKEND_URL: 'http://127.0.0.1:5000'
+          TEST_PROFILE: ${{ github.event.inputs.test_profile || 'Load' }}
+        run: |
+          k6 run --summary-export backend/performance_tests/reports/summary.json backend/performance_tests/scripts/load-test.js || true
+
+      - name: Parse k6 Summary & Publish GitHub Step Summary
+        run: |
+          node backend/performance_tests/scripts/parseK6Summary.js
+
+      - name: Upload Performance Test Reports & Artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: healthlog-api-performance-reports
+          path: |
+            backend/performance_tests/reports/summary.json
+            backend/performance_tests/reports/summary-report.md
+            backend/performance_tests/reports/summary.html
+            backend/performance_tests/config/endpoints.json
+          retention-days: 30
