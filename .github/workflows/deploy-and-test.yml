@@ -38,7 +38,9 @@ jobs:
           cd "healthLog Web"
           npm install
 
-      - name: Build Next.js Static Export
+      - name: Build Next.js Static Export for GitHub Pages
+        env:
+          GITHUB_ACTIONS: 'true'
         run: |
           cd "healthLog Web"
           npm run build
@@ -48,8 +50,8 @@ jobs:
           cd "healthLog Web"
           npx serve out -p 3000 &
           sleep 5
-          curl -I http://127.0.0.1:3000 || exit 1
-          echo "TEST_BASE_URL=http://127.0.0.1:3000" >> $GITHUB_ENV
+          curl -I http://127.0.0.1:3000/Healthlog-Web/ || curl -I http://127.0.0.1:3000/ || exit 1
+          echo "TEST_BASE_URL=http://127.0.0.1:3000/Healthlog-Web" >> $GITHUB_ENV
 
       - name: Execute 500 Selenium Web E2E Tests
         run: |
