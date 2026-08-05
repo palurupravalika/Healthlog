@@ -136,7 +136,7 @@ pip install -r requirements.txt
 python run.py
 ```
 
-**Backend runs at:** `http://localhost:5000`
+**Backend runs at:** `https://healthlog-backend-u23h.onrender.com`
 
 ---
 
