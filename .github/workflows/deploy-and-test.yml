@@ -51,25 +51,23 @@ jobs:
           curl -I http://127.0.0.1:3000 || exit 1
           echo "TEST_BASE_URL=http://127.0.0.1:3000" >> $GITHUB_ENV
 
-      - name: Install Chrome & ChromeDriver
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y google-chrome-stable
-
       - name: Execute 500 Selenium Web E2E Tests
         run: |
           cd "healthLog Web"
           npx mocha HealthLogE2E/tests/mega_web_500.test.js --reporter spec
 
       - name: Prepare Deployment Artifacts & Inject Test Reports
+        if: always()
         run: |
           cd "healthLog Web"
           mkdir -p out/reports/latest
           mkdir -p out/reports/history/build-${{ github.run_number }}
 
-          cp HealthLogE2E/reports/HTML/execution-report.html out/reports/latest/execution-report.html
-          cp HealthLogE2E/reports/HTML/execution-report.html out/reports/history/build-${{ github.run_number }}/execution-report.html
-          
+          if [ -f HealthLogE2E/reports/HTML/execution-report.html ]; then
+            cp HealthLogE2E/reports/HTML/execution-report.html out/reports/latest/execution-report.html
+            cp HealthLogE2E/reports/HTML/execution-report.html out/reports/history/build-${{ github.run_number }}/execution-report.html
+          fi
+
           if [ -f HealthLogE2E/reports/Excel/selenium-report.xlsx ]; then
             cp HealthLogE2E/reports/Excel/selenium-report.xlsx out/reports/latest/selenium-report.xlsx
             cp HealthLogE2E/reports/Excel/selenium-report.xlsx out/reports/history/build-${{ github.run_number }}/selenium-report.xlsx
@@ -87,6 +85,7 @@ jobs:
       - name: Generate GitHub Step Summary
         if: always()
         run: |
+          PAGE_URL="${{ steps.deployment.outputs.page_url }}"
           echo "# HealthLog Selenium Execution Report" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Metric | Value |" >> $GITHUB_STEP_SUMMARY
@@ -101,9 +100,9 @@ jobs:
           echo "| **Fail %** | 0% |" >> $GITHUB_STEP_SUMMARY
           echo "| **Browser** | Google Chrome (Headless) |" >> $GITHUB_STEP_SUMMARY
           echo "| **Environment** | GitHub Actions CI/CD |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Live Website URL** | ${{ steps.deployment.outputs.page_url }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| **GitHub Pages URL** | ${{ steps.deployment.outputs.page_url }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Latest HTML Report** | [View Latest Report](${{ steps.deployment.outputs.page_url }}reports/latest/execution-report.html) |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Historical Report** | [View Build #${{ github.run_number }} Report](${{ steps.deployment.outputs.page_url }}reports/history/build-${{ github.run_number }}/execution-report.html) |" >> $GITHUB_STEP_SUMMARY
-          echo "| **Excel Report Artifact** | [Download Excel Report](${{ steps.deployment.outputs.page_url }}reports/latest/selenium-report.xlsx) |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Live Website URL** | ${PAGE_URL} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **GitHub Pages URL** | ${PAGE_URL} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Latest HTML Report** | [View Latest Report](${PAGE_URL}reports/latest/execution-report.html) |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Historical Report** | [View Build #${{ github.run_number }} Report](${PAGE_URL}reports/history/build-${{ github.run_number }}/execution-report.html) |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Excel Report Artifact** | [Download Excel Report](${PAGE_URL}reports/latest/selenium-report.xlsx) |" >> $GITHUB_STEP_SUMMARY
           echo "| **Execution Timestamp** | $(date) |" >> $GITHUB_STEP_SUMMARY
