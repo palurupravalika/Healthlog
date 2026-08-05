@@ -38,7 +38,7 @@ jobs:
           cd "healthLog Web"
           npm install
 
-      - name: Build Next.js Application
+      - name: Build Next.js Static Export
         run: |
           cd "healthLog Web"
           npm run build
@@ -46,7 +46,7 @@ jobs:
       - name: Start Local Production Preview Server
         run: |
           cd "healthLog Web"
-          npm run start &
+          npx serve out -p 3000 &
           sleep 5
           curl -I http://127.0.0.1:3000 || exit 1
           echo "TEST_BASE_URL=http://127.0.0.1:3000" >> $GITHUB_ENV
