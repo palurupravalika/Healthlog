@@ -25,7 +25,7 @@ jobs:
 
     defaults:
       run:
-        shell: pwsh
+        shell: powershell
 
     steps:
       # ── 1. Checkout (with submodules so HealthLogAppium is available) ──────
@@ -48,7 +48,7 @@ jobs:
         working-directory: "healthLog App/HealthLogAppium"
         run: |
           Write-Host "=== Delegating to HealthLogAppium test pipeline ==="
-          pwsh -File scripts\ci_run_tests.ps1
+          powershell -File scripts\ci_run_tests.ps1
 
       # ── 4. Upload every generated artifact ───────────────────────────────
       - name: Upload Test Artifacts
